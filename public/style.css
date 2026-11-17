@@ -10,3 +10,6 @@
 @media(max-width:680px){.hero-art{min-height:435px}.sidebar .brand{font-size:1.2rem}}
 input,select{font-size:16px}
 @media(max-width:360px){.guest-header .brand{font-size:.95rem;gap:7px}.guest-header .brand-mark{width:30px;height:30px;font-size:25px}.guest-shell .connection{font-size:.62rem}.guest-shell .pill{padding:6px 8px}.guest-game-head h1{font-size:1.55rem}}
+
+/* SVG avoids platform-dependent emoji/font rendering on iOS and Android. */
+.icon-sun{display:inline-block;width:1em;height:1em;vertical-align:-.125em;flex-shrink:0;overflow:visible}

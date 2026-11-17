@@ -1,0 +1,33 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PUBLIC_URL: https://${DOMAIN:?Configurá DOMAIN en .env}
+      TRUST_PROXY: "1"
+      COLOR_DELTA_E: ${COLOR_DELTA_E:-32}
+      COLOR_MIN_COVERAGE: ${COLOR_MIN_COVERAGE:-0.25}
+    volumes:
+      - cumple_data:/app/data
+    expose:
+      - "3000"
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?Configurá DOMAIN en .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+volumes:
+  cumple_data:
+  caddy_data:
+  caddy_config:

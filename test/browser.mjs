@@ -122,7 +122,7 @@ try {
   await expect(first.page.getByText('Consigna 1 de 5 · En juego')).toBeVisible();
   await expect(photoRules).toHaveCount(0);
   await mobileCheck(first.page, 'Fotos');
-  for (const team of ['verde', 'roja']) {
+  for (const team of ['azul', 'verde', 'roja']) {
     const p = participants.find(p => p.state.me.id === photoState.games[3].photographers[team]);
     await p.page.getByRole('button', { name: 'Preparar la foto del equipo' }).click();
     await p.page.locator('#photo-file').setInputFiles({ name: 'equipo.jpg', mimeType: 'image/jpeg', buffer: colorBytes });
@@ -133,14 +133,16 @@ try {
   await admin.getByRole('button', { name: 'Revisar ↗', exact: true }).first().click();
   const reviewDialog = admin.locator('#modal');
   await expect(reviewDialog.getByRole('heading', { name: photoState.games[3].prompts[0].text, exact: true })).toBeVisible();
-  await expect(reviewDialog.locator('.review-info .verde')).toContainText('Salita verde');
   await expect(admin.getByText(/Tiempo hasta el envío:/)).toBeVisible();
-  await expect(admin.getByText('1 de 2', { exact: true })).toBeVisible();
-  await admin.getByRole('button', { name: 'Siguiente →', exact: true }).click();
-  await expect(admin.getByText('2 de 2', { exact: true })).toBeVisible();
-  await expect(reviewDialog.locator('.review-info .roja')).toContainText('Salita roja');
-  for (const team of ['verde', 'roja']) {
-    await expect(reviewDialog.locator(`.award-buttons .${team}`)).toContainText(`Salita ${team}`);
+  await expect(reviewDialog.getByText(/Una foto a la vez|Decidí si cumple la consigna/)).toHaveCount(0);
+  const reviewColors = { azul: 'rgb(52, 95, 168)', verde: 'rgb(40, 112, 73)', roja: 'rgb(163, 63, 66)' };
+  for (const [index, team] of ['azul', 'verde', 'roja'].entries()) {
+    if (index) await reviewDialog.getByRole('button', { name: 'Siguiente →' }).click();
+    await expect(reviewDialog.getByText(`${index + 1} de 3`, { exact: true })).toBeVisible();
+    const badge = reviewDialog.locator('.review-info .pill');
+    await expect(badge).toContainText(`Salita ${team}`);
+    await expect(badge).toHaveCSS('background-color', reviewColors[team]);
+    await expect(reviewDialog.locator(`.award-buttons .${team}`)).toHaveCSS('background-color', reviewColors[team]);
   }
   await admin.locator('#modal').getByRole('button', { name: 'Salita verde' }).click();
   await expect(admin.getByText('Guardado: 1 punto para Salita verde')).toBeVisible();

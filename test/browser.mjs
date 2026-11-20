@@ -102,14 +102,26 @@ try {
   await mobileCheck(first.page, 'Color');
   await first.page.screenshot({ path: `test-results/${engine}-iphone-color.png`, fullPage: true });
   await admin.getByRole('button', { name: 'Desafío de fotos', exact: true }).click();
+  const photoRules = first.page.getByText('Cómo se juega · Juego 03', { exact: true });
+  await expect(photoRules).toBeVisible();
   await admin.getByRole('button', { name: 'Sortear fotógrafos e iniciar juego' }).click();
+  const photoState = await getAdmin();
+  for (const player of participants) {
+    const photographerId = photoState.games[3].photographers[player.state.me.team];
+    const photographer = participants.find(p => p.state.me.id === photographerId);
+    const banner = player.page.locator('.photographer-banner');
+    await expect(banner.getByRole('heading', { name: photographer.name, exact: true })).toBeVisible();
+    await expect(banner.getByText(player === photographer ? '¡Sos el fotógrafo de tu salita!' : 'Fotógrafo de tu salita', { exact: true })).toBeVisible();
+  }
+  await expect(photoRules).toHaveCount(0);
   await admin.getByRole('button', { name: 'Cargar referencia' }).click();
   await admin.locator('#photo-file').setInputFiles({ name: 'pose.jpg', mimeType: 'image/jpeg', buffer: colorBytes });
   await admin.getByRole('button', { name: 'Guardar referencia' }).click();
   await expect(admin.getByAltText('Pose de referencia')).toBeVisible();
   await admin.getByRole('button', { name: 'Lanzar consigna 1' }).click();
+  await expect(first.page.getByText('Consigna 1 de 5 · En juego')).toBeVisible();
+  await expect(photoRules).toHaveCount(0);
   await mobileCheck(first.page, 'Fotos');
-  const photoState = await getAdmin();
   for (const team of ['verde', 'roja']) {
     const p = participants.find(p => p.state.me.id === photoState.games[3].photographers[team]);
     await p.page.getByRole('button', { name: 'Preparar la foto del equipo' }).click();
@@ -119,14 +131,22 @@ try {
   }
   await admin.getByRole('button', { name: 'Cerrar consigna y revisar' }).click();
   await admin.getByRole('button', { name: 'Revisar ↗', exact: true }).first().click();
+  const reviewDialog = admin.locator('#modal');
+  await expect(reviewDialog.getByRole('heading', { name: photoState.games[3].prompts[0].text, exact: true })).toBeVisible();
+  await expect(reviewDialog.locator('.review-info .verde')).toContainText('Salita verde');
   await expect(admin.getByText(/Tiempo hasta el envío:/)).toBeVisible();
   await expect(admin.getByText('1 de 2', { exact: true })).toBeVisible();
   await admin.getByRole('button', { name: 'Siguiente →', exact: true }).click();
   await expect(admin.getByText('2 de 2', { exact: true })).toBeVisible();
+  await expect(reviewDialog.locator('.review-info .roja')).toContainText('Salita roja');
+  for (const team of ['verde', 'roja']) {
+    await expect(reviewDialog.locator(`.award-buttons .${team}`)).toContainText(`Salita ${team}`);
+  }
   await admin.locator('#modal').getByRole('button', { name: 'Salita verde' }).click();
   await expect(admin.getByText('Guardado: 1 punto para Salita verde')).toBeVisible();
   await admin.locator('#modal').getByRole('button', { name: 'Salita roja' }).click();
   await expect(admin.getByText('Guardado: 1 punto para Salita roja')).toBeVisible();
+  await expect(reviewDialog.getByRole('button', { name: 'Salita roja', pressed: true })).toBeVisible();
   await admin.screenshot({ path: `test-results/${engine}-photo-review.png`, fullPage: true });
   await admin.getByRole('button', { name: 'Cerrar revisión' }).click();
   await admin.getByRole('button', { name: 'Resultados finales', exact: true }).click();

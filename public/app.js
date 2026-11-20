@@ -141,7 +141,13 @@ function guestPhotos() {
   const g = state.games[3], p = g.prompts[g.current], photographer = g.photographers[state.me.team];
   const head = '<div class="guest-game-head"><div><p class="eyebrow">Juego 03</p><h1>Desafío de fotos</h1></div><span class="nav-icon">▣</span></div>';
   if (g.status === 'idle') return `${head}<div class="panel center"><div class="waiting-ring">▣</div><h2>Se viene la foto.</h2><p class="small muted" style="margin-top:15px">El anfitrión va a sortear un fotógrafo por salita. Todos participan; una persona captura el momento.</p></div>${waitingRules(3)}`;
-  return `${head}<div class="notice">${photographer === state.me.id ? '<strong>¡Sos el fotógrafo de tu salita!</strong><br>Vos tenés la cámara. Tu equipo pone la actitud.' : `El fotógrafo de tu equipo es <strong>${esc(personName(photographer))}</strong>. Organizá la foto con tu salita.`}</div>${p ? `<section class="prompt-card"><p class="eyebrow">Consigna ${g.current + 1} de 5 · ${p.status === 'active' ? 'En juego' : 'Cerrada'}</p><h2>${esc(p.text)}</h2>${g.current === 2 && g.reference ? `<img class="reference" src="${g.reference}" alt="La pose que tiene que copiar tu equipo">` : ''}</section>${p.status === 'active' ? p.submissions[state.me.team] ? '<div class="notice">✓ ¡Foto entregada! El anfitrión la revisará al cerrar la consigna.</div>' : photographer === state.me.id ? '<button class="btn full" data-action="team-camera">▣ Preparar la foto del equipo</button><p class="form-note center" style="margin-top:12px">Podés revisarla antes de enviar. Hay una sola entrega final.</p>' : '<div class="notice">Ayudá a organizar la foto. Solo el fotógrafo puede enviarla.</div>' : `<div class="notice">${p.winner ? `Punto para ${teamName(p.winner)}.` : 'Consigna cerrada. El anfitrión está revisando las fotos.'}</div>`}` : '<div class="panel center" style="margin-top:20px"><div class="waiting-ring">✦</div><h2>El equipo está listo.</h2><p class="small muted" style="margin-top:12px">La primera consigna va a aparecer acá.</p></div>'}${scoreCards(3)}${waitingRules(3)}`;
+  const isPhotographer = photographer === state.me.id;
+  const photographerBanner = `<section class="photographer-banner">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="4"/></svg>
+    <div><p>${isPhotographer ? '¡Sos el fotógrafo de tu salita!' : 'Fotógrafo de tu salita'}</p>
+    <h2>${esc(personName(photographer))}</h2></div>
+  </section>`;
+  return `${head}${photographerBanner}${p ? `<section class="prompt-card"><p class="eyebrow">Consigna ${g.current + 1} de 5 · ${p.status === 'active' ? 'En juego' : 'Cerrada'}</p><h2>${esc(p.text)}</h2>${g.current === 2 && g.reference ? `<img class="reference" src="${g.reference}" alt="La pose que tiene que copiar tu equipo">` : ''}</section>${p.status === 'active' ? p.submissions[state.me.team] ? '<div class="notice">✓ ¡Foto entregada! El anfitrión la revisará al cerrar la consigna.</div>' : isPhotographer ? '<button class="btn full" data-action="team-camera">▣ Preparar la foto del equipo</button><p class="form-note center" style="margin-top:12px">Podés revisarla antes de enviar. Hay una sola entrega final.</p>' : '<div class="notice">Ayudá a organizar la foto. Solo el fotógrafo puede enviarla.</div>' : `<div class="notice">${p.winner ? `Punto para ${teamName(p.winner)}.` : 'Consigna cerrada. El anfitrión está revisando las fotos.'}</div>`}` : '<div class="panel center" style="margin-top:20px"><div class="waiting-ring">✦</div><h2>El equipo está listo.</h2><p class="small muted" style="margin-top:12px">La primera consigna va a aparecer acá.</p></div>'}${scoreCards(3)}`;
 }
 function renderGuest() {
   root.innerHTML = `<main class="guest-shell"><header class="guest-header">${brand}<span class="pill">¡A jugar!</span></header><div class="row between"><span class="pill ${state.me.team || ''}">${state.me.team ? `${symbols[state.me.team]} ${teamName(state.me.team)}` : 'La previa'}</span>${connectionHtml()}</div>${!state.drawn || state.selectedGame === 0 ? guestLobby() : state.selectedGame < 3 ? guestTimed(state.selectedGame) : state.selectedGame === 3 ? guestPhotos() : `<div style="margin-top:25px">${results()}</div>`}${footer}</main>`;
@@ -369,7 +375,29 @@ function renderReview() {
   const photos = Object.entries(p.submissions);
   review.position = Math.max(0, Math.min(review.position, photos.length - 1));
   const current = photos[review.position];
-  modal.innerHTML = `<div class="modal-head"><div><p class="eyebrow">Revisión · Consigna ${review.index + 1}</p><h2 style="margin-top:8px">Una foto a la vez.</h2></div><button class="icon-button" data-action="modal-close" aria-label="Cerrar revisión">×</button></div>${current ? `<img class="review-photo" src="${current[1].url}?role=admin" alt="Entrega de ${teamName(current[0])}"><div class="review-info"><h3>${esc(p.text)}</h3><p><strong>${teamName(current[0])}</strong> · ${esc(personName(current[1].playerId))}</p><p>Tiempo hasta el envío: <strong>${elapsed(current[1].elapsedMs)}</strong></p></div><div class="review-controls"><button class="btn light small" data-action="review-prev" ${review.position === 0 ? 'disabled' : ''}>← Anterior</button><span>${review.position + 1} de ${photos.length}</span><button class="btn light small" data-action="review-next" ${review.position === photos.length - 1 ? 'disabled' : ''}>Siguiente →</button></div>` : '<div class="empty">Ningún equipo entregó una foto.</div>'}<div class="divider"></div><h3>¿Quién se lleva el punto?</h3><p class="form-note" style="margin:10px 0 16px">Decidí si cumple la consigna y usá el tiempo hasta el envío como criterio. Podés corregir el ganador: el total se recalcula.</p><div class="award-buttons">${state.teams.filter(t => p.submissions[t.id]).map(t => `<button class="btn light small ${p.winner === t.id ? 'selected' : ''}" data-action="award" data-team="${t.id}">${symbols[t.id]} ${t.name}</button>`).join('')}<button class="btn light small ${p.winner === null ? 'selected' : ''}" data-action="award" data-team="">Sin ganador</button></div><p class="small muted" style="margin-top:15px">Guardado: ${p.winner ? `1 punto para ${teamName(p.winner)}` : 'sin ganador'}</p>`;
+  const awardButtons = state.teams.filter(team => p.submissions[team.id]).map(team =>
+    `<button class="pill ${team.id}" data-action="award" data-team="${team.id}" aria-pressed="${p.winner === team.id}">${symbols[team.id]} ${esc(team.name)}</button>`
+  ).join('');
+  modal.innerHTML = `
+    <div class="modal-head">
+      <div><p class="eyebrow">Revisión · Consigna ${review.index + 1}</p><h2 style="margin-top:8px">${esc(p.text)}</h2></div>
+      <button class="icon-button" data-action="modal-close" aria-label="Cerrar revisión">×</button>
+    </div>
+    ${current ? `
+      <img class="review-photo" src="${current[1].url}?role=admin" alt="Entrega de ${teamName(current[0])}">
+      <div class="review-info">
+        <p class="row wrap"><span class="pill ${current[0]}">${symbols[current[0]]} ${teamName(current[0])}</span> ${esc(personName(current[1].playerId))}</p>
+        <p>Tiempo hasta el envío: <strong>${elapsed(current[1].elapsedMs)}</strong></p>
+      </div>
+      <div class="review-controls">
+        <button class="btn light small" data-action="review-prev" ${review.position === 0 ? 'disabled' : ''}>← Anterior</button>
+        <span>${review.position + 1} de ${photos.length}</span>
+        <button class="btn light small" data-action="review-next" ${review.position === photos.length - 1 ? 'disabled' : ''}>Siguiente →</button>
+      </div>` : '<div class="empty">Ningún equipo entregó una foto.</div>'}
+    <div class="divider"></div>
+    <h3>¿Quién se lleva el punto?</h3>
+    <div class="award-buttons">${awardButtons}<button class="pill" data-action="award" data-team="" aria-pressed="${p.winner === null}">Sin ganador</button></div>
+    <p class="small muted" style="margin-top:15px">Guardado: ${p.winner ? `1 punto para ${teamName(p.winner)}` : 'sin ganador'}</p>`;
 }
 
 setInterval(() => {
